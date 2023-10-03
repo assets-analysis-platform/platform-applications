@@ -44,7 +44,6 @@
             <plugin>
                 <groupId>org.codehaus.gmavenplus</groupId>
                 <artifactId>gmavenplus-plugin</artifactId>
-                <version>${org.codehaus.gmavenplus.version}</version>
                 <executions>
                     <execution>
                         <goals>
