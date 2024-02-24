@@ -96,13 +96,13 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
 
     ### token_transfers
 
-    # token_transfers_output_dir=${output_dir}/token_transfers${partition_dir}
-    # mkdir -p ${token_transfers_output_dir};
+     token_transfers_output_dir=${output_dir}/token_transfers${partition_dir}
+     mkdir -p ${token_transfers_output_dir};
 
-    # token_transfers_file=${token_transfers_output_dir}/token_transfers_${file_name_suffix}.csv
-    # log "Exporting ERC20 transfers from blocks ${block_range} to ${token_transfers_file}"
-    # python ethereumetl export_token_transfers --start-block=${batch_start_block} --end-block=${batch_end_block} --provider-uri="${provider_uri}" --output=${token_transfers_file}
-    # quit_if_returned_error
+     token_transfers_file=${token_transfers_output_dir}/token_transfers_${file_name_suffix}.csv
+     log "Exporting ERC20 transfers from blocks ${block_range} to ${token_transfers_file}"
+     python ethereumetl export_token_transfers --start-block=${batch_start_block} --end-block=${batch_end_block} --provider-uri="${provider_uri}" --output=${token_transfers_file}
+     quit_if_returned_error
 
     ### receipts_and_logs
 
@@ -118,14 +118,14 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
 
     ## 1) -> export only logs
 
-    logs_output_dir=${output_dir}/logs${partition_dir}
-    mkdir -p ${logs_output_dir};
-
-    logs_file=${logs_output_dir}/logs_${file_name_suffix}.csv
-    log "Exporting logs from blocks ${block_range} to ${logs_file}"
-
-    python ethereumetl export_receipts_and_logs --transaction-hashes ${transaction_hashes_file} --provider-uri="${provider_uri}" --logs-output=${logs_file}
-    quit_if_returned_error
+#    logs_output_dir=${output_dir}/logs${partition_dir}
+#    mkdir -p ${logs_output_dir};
+#
+#    logs_file=${logs_output_dir}/logs_${file_name_suffix}.csv
+#    log "Exporting logs from blocks ${block_range} to ${logs_file}"
+#
+#    python ethereumetl export_receipts_and_logs --transaction-hashes ${transaction_hashes_file} --provider-uri="${provider_uri}" --logs-output=${logs_file}
+#    quit_if_returned_error
 
     ## 2) -> export only receipts
 
@@ -140,55 +140,55 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
 
     ## 3) -> export logs and receipts
 
-    # logs_output_dir=${output_dir}/logs${partition_dir}
-    # receipts_output_dir=${output_dir}/receipts${partition_dir}
+     logs_output_dir=${output_dir}/logs${partition_dir}
+     receipts_output_dir=${output_dir}/receipts${partition_dir}
 
-    # mkdir -p ${logs_output_dir};
-    # mkdir -p ${receipts_output_dir};
+     mkdir -p ${logs_output_dir};
+     mkdir -p ${receipts_output_dir};
 
-    # logs_file=${logs_output_dir}/logs_${file_name_suffix}.csv
-    # receipts_file=${receipts_output_dir}/receipts_${file_name_suffix}.csv
+     logs_file=${logs_output_dir}/logs_${file_name_suffix}.csv
+     receipts_file=${receipts_output_dir}/receipts_${file_name_suffix}.csv
 
-    # log "Exporting logs and receipts from blocks ${block_range} to ${logs_file} and ${receipts_file}"
+     log "Exporting logs and receipts from blocks ${block_range} to ${logs_file} and ${receipts_file}"
 
-    # python ethereumetl export_receipts_and_logs --transaction-hashes ${transaction_hashes_file} --provider-uri="${provider_uri}"  --receipts-output=${receipts_file} --logs-output=${logs_file}
-    # quit_if_returned_error
+     python ethereumetl export_receipts_and_logs --transaction-hashes ${transaction_hashes_file} --provider-uri="${provider_uri}"  --receipts-output=${receipts_file} --logs-output=${logs_file}
+     quit_if_returned_error
 
     ### contracts
 
-    # contract_addresses_output_dir=${output_dir}/contract_addresses${partition_dir}
-    # mkdir -p ${contract_addresses_output_dir}
+     contract_addresses_output_dir=${output_dir}/contract_addresses${partition_dir}
+     mkdir -p ${contract_addresses_output_dir}
 
-    # contract_addresses_file=${contract_addresses_output_dir}/contract_addresses_${file_name_suffix}.csv
-    # log "Extracting contract_address from receipt file ${receipts_file}"
-    # python ethereumetl extract_csv_column --input ${receipts_file} --column contract_address --output ${contract_addresses_file}
-    # quit_if_returned_error
+     contract_addresses_file=${contract_addresses_output_dir}/contract_addresses_${file_name_suffix}.csv
+     log "Extracting contract_address from receipt file ${receipts_file}"
+     python ethereumetl extract_csv_column --input ${receipts_file} --column contract_address --output ${contract_addresses_file}
+     quit_if_returned_error
 
-    # contracts_output_dir=${output_dir}/contracts${partition_dir}
-    # mkdir -p ${contracts_output_dir};
+     contracts_output_dir=${output_dir}/contracts${partition_dir}
+     mkdir -p ${contracts_output_dir};
 
-    # contracts_file=${contracts_output_dir}/contracts_${file_name_suffix}.csv
-    # log "Exporting contracts from blocks ${block_range} to ${contracts_file}"
-    # python ethereumetl export_contracts --contract-addresses ${contract_addresses_file} --provider-uri="${provider_uri}" --output=${contracts_file}
-    # quit_if_returned_error
+     contracts_file=${contracts_output_dir}/contracts_${file_name_suffix}.csv
+     log "Exporting contracts from blocks ${block_range} to ${contracts_file}"
+     python ethereumetl export_contracts --contract-addresses ${contract_addresses_file} --provider-uri="${provider_uri}" --output=${contracts_file}
+     quit_if_returned_error
 
     ### tokens
 
-    # token_addresses_output_dir=${output_dir}/token_addresses${partition_dir}
-    # mkdir -p ${token_addresses_output_dir}
+     token_addresses_output_dir=${output_dir}/token_addresses${partition_dir}
+     mkdir -p ${token_addresses_output_dir}
 
-    # token_addresses_file=${token_addresses_output_dir}/token_addresses_${file_name_suffix}
-    # log "Extracting token_address from token_transfers file ${token_transfers_file}"
-    # python ethereumetl extract_csv_column -i ${token_transfers_file} -c token_address -o - | sort | uniq > ${token_addresses_file}
-    # quit_if_returned_error
+     token_addresses_file=${token_addresses_output_dir}/token_addresses_${file_name_suffix}
+     log "Extracting token_address from token_transfers file ${token_transfers_file}"
+     python ethereumetl extract_csv_column -i ${token_transfers_file} -c token_address -o - | sort | uniq > ${token_addresses_file}
+     quit_if_returned_error
 
-    # tokens_output_dir=${output_dir}/tokens${partition_dir}
-    # mkdir -p ${tokens_output_dir}
+     tokens_output_dir=${output_dir}/tokens${partition_dir}
+     mkdir -p ${tokens_output_dir}
 
-    # tokens_file=${tokens_output_dir}/tokens_${file_name_suffix}.csv
-    # log "Exporting tokens from blocks ${block_range} to ${tokens_file}"
-    # python ethereumetl export_tokens --token-addresses ${token_addresses_file} --provider-uri="${provider_uri}" --output ${tokens_file}
-    # quit_if_returned_error
+     tokens_file=${tokens_output_dir}/tokens_${file_name_suffix}.csv
+     log "Exporting tokens from blocks ${block_range} to ${tokens_file}"
+     python ethereumetl export_tokens --token-addresses ${token_addresses_file} --provider-uri="${provider_uri}" --output ${tokens_file}
+     quit_if_returned_error
 
     end_time=$(date +%s)
     time_diff=$((end_time-start_time))

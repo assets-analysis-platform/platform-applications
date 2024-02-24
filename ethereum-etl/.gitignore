@@ -1,4 +1,5 @@
 output/**
 venv
 .idea/
+ethereum-etl/ethereumetl/__pycache__/
 notes.txt
