@@ -1,0 +1,6 @@
+sample_data/**
+venv
+.idea/
+notes.txt
+notes.ipynb
+.env
