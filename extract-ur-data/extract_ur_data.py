@@ -15,6 +15,7 @@ load_dotenv()
 def main(s3_eth_transactions_uri: str, s3_eth_logs_uri: str, s3_output_uri: str):
 
     rpc_provider = Web3.HTTPProvider(os.getenv('RPC_INFURA_HTTPS_ENDPOINT'))
+    etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
 
     web3 = Web3(provider=rpc_provider)
     router_codec = RouterCodec(w3=web3)
@@ -27,25 +28,45 @@ def main(s3_eth_transactions_uri: str, s3_eth_logs_uri: str, s3_output_uri: str)
     # ETL
     eth_blockchain_transactions_df = get_data(spark, s3_eth_transactions_uri)
     eth_blockchain_logs_df = get_data(spark, s3_eth_logs_uri)
-    result = retrieve_ur_transactions(web3, router_codec, eth_blockchain_transactions_df, eth_blockchain_logs_df)
+    result = retrieve_ur_transactions(web3, router_codec, etherscan_api_key, eth_blockchain_transactions_df, eth_blockchain_logs_df)
     write_to_s3(result, s3_output_uri)
 
     spark.stop()
 
 
-def _get_contract_abi(contract_address: str, api_key: str) -> list:
+def _get_abi_from_etherscan(contract_address: str, api_key: str) -> list:
     """
-        Get contract ABI for provided contract
+        Get contract ABI from Etherscan API
     """
     etherscan_uri = f"https://api.etherscan.io/api?module=contract&action=getabi&address={contract_address}&apikey={api_key}"
     r = requests.get(url=etherscan_uri)
     return json.loads(json.loads(r.text)['result'])
 
 
-def _parse_row(web3: Web3, router_codec: RouterCodec, row: Row) -> Row:
+def _get_abi_from_redis(contract_address: str, key: str) -> list:
+    """
+        Get contract ABI from Redis cache
+    """
+    # TODO -> ADD retrieving ABI from Redis cache
+    return []
 
-    etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
 
+def _get_abi(contract_address: str, api_key: str) -> list:
+    """
+        Get contract ABI
+    """
+    # TODO -> ADD retrieving ABI mechanism
+    # 1. Check if ABI is present in redis cache
+    #       - if yes, get it and return (END)
+    #       - if no, call _get_abi_from_etherscan (point 2)
+    # 2. Get ABI from Etherscan API
+    #       - call API
+    #       - save result to Redis cache (asynchronously)
+    #       - return value for further processing (END)
+    return _get_abi_from_etherscan(contract_address, api_key)   # TODO -> temporary workaround
+
+
+def _parse_row(web3: Web3, router_codec: RouterCodec, etherscan_api_key: str, row: Row) -> Row:
     # UR transactions tracked commands
     CMD_V2_SWAP_EXACT_IN = 'V2_SWAP_EXACT_IN'
     CMD_V2_SWAP_EXACT_OUT = 'V2_SWAP_EXACT_OUT'
@@ -92,26 +113,18 @@ def _parse_row(web3: Web3, router_codec: RouterCodec, row: Row) -> Row:
         row_dict['swap_amount_out'] = params['amountOut']
 
     token_address_in = row_dict['token_address_in']
-    token_address_in_abi = _get_contract_abi(contract_address=token_address_in, api_key=etherscan_api_key)
     token_address_out = row_dict['token_address_out']
-    token_address_out_abi = _get_contract_abi(contract_address=token_address_out, api_key=etherscan_api_key)
 
-    contract_from = web3.eth.contract(address=token_address_in, abi=token_address_in_abi)
-    contract_to = web3.eth.contract(address=token_address_out, abi=token_address_out_abi)
+    contract_from = web3.eth.contract(address=token_address_in, abi=_get_abi(token_address_in, etherscan_api_key))
+    contract_to = web3.eth.contract(address=token_address_out, abi=_get_abi(token_address_out, etherscan_api_key))
 
-    token_in_name = contract_from.functions.name().call()
-    token_in_symbol = contract_from.functions.symbol().call()
-
-    token_out_name = contract_to.functions.name().call()
-    token_out_symbol = contract_to.functions.symbol().call()
-
-    row_dict['token_in_name'] = token_in_name
-    row_dict['token_in_symbol'] = token_in_symbol
-    row_dict['token_out_name'] = token_out_name
-    row_dict['token_out_symbol'] = token_out_symbol
+    row_dict['token_in_name'] = contract_from.functions.name().call()
+    row_dict['token_in_symbol'] = contract_from.functions.symbol().call()
+    row_dict['token_out_name'] = contract_to.functions.name().call()
+    row_dict['token_out_symbol'] = contract_to.functions.symbol().call()
 
     address = web3.to_checksum_address(row_dict['event_src_addr'])
-    address_abi = _get_contract_abi(contract_address=address, api_key=etherscan_api_key)
+    address_abi = _get_abi(contract_address=address, api_key=etherscan_api_key)
 
     pool_contract = web3.eth.contract(address=address, abi=address_abi)
 
@@ -147,7 +160,7 @@ def get_data(spark: SparkSession, uri: str) -> DataFrame:
     return spark.read.csv(uri)
 
 
-def retrieve_ur_transactions(web3: Web3, router_codec: RouterCodec, transactions_df: DataFrame, logs_df: DataFrame) -> DataFrame:
+def retrieve_ur_transactions(web3: Web3, router_codec: RouterCodec, etherscan_api_key: str, transactions_df: DataFrame, logs_df: DataFrame) -> DataFrame:
 
     # Universal Router contract address
     UNIVERSAL_ROUTER_CONTRACT_ADDRESS = "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD".lower()
@@ -175,7 +188,7 @@ def retrieve_ur_transactions(web3: Web3, router_codec: RouterCodec, transactions
 
     merged_df = eth_blockchain_transactions_df.join(eth_blockchain_logs_df, "transaction_hash").cache()
 
-    return merged_df.rdd.map(lambda row: _parse_row(web3, router_codec, row)).toDF()
+    return merged_df.rdd.map(lambda row: _parse_row(web3, router_codec, etherscan_api_key, row)).toDF()
 
 
 def write_to_s3(df: DataFrame, s3_result_uri: str) -> None:
