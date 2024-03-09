@@ -11,6 +11,13 @@ cd ethereum-etl/
 sh export_all.sh -s <start_block> -e <end_block> -b <partition_size> -p <rpc_provider> -o <output_directory>
 ```
 
+## Export blocks, transactions and logs for specified time range (days) using Docker
+```
+$ cd .\ethereum-etl
+$ docker build -t eth-etl:latest .
+$ docker run -v .\..\output\data\raw\blockchains\ethereum:/ethereum-etl/output eth-etl:latest export_blocks_transactions_and_logs -s 2018-01-03 -e 2018-01-03 -p https://rpc.ankr.com/eth/SUPER_SECRET_TOKEN
+```
+
 ## Stream data
 
 ### Example 1 -> blockchain data to a Postgres database
